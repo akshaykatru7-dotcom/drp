@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+rapidfuzz
+imagehash
+pillow
+python-multipart
+groq
+python-dotenv
