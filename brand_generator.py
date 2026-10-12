@@ -7,9 +7,18 @@ HOMOGLYPHS = {
     'u': ['v'], 'm': ['rn', 'nn'], 'n': ['m'], 'r': ['n'],
 }
 
+# Available demo logo fixtures
+LOGO_FIXTURES = [
+    "logos/official_paypal.png",           # identical → very high score
+    "logos/fake_paypa1_identical.png",     # identical → very high
+    "logos/fake_paypal_shade.png",         # slight shade → ~97
+    "logos/fake_paypal_pro.png",           # different → ~85
+    "logos/fake_paypal_dark.png",          # dark → ~70
+    "logos/unrelated_notes.png",           # unrelated → low
+]
+
 
 def _homoglyph_variant(name: str) -> str:
-    """Swap one character with a look-alike."""
     if not name:
         return name
     idxs = [i for i, c in enumerate(name.lower()) if c in HOMOGLYPHS]
@@ -41,52 +50,56 @@ def _typo_variant(name: str) -> str:
     return name[:i] + name[i + 1:]
 
 
+def _fuzzy_variant(name: str) -> str:
+    """Slight misspelling → triggers fuzzy but not homoglyph."""
+    if len(name) < 4:
+        return name
+    swaps = [("ph", "pp"), ("ll", "l"), ("tt", "t"), ("ss", "s")]
+    for old, new in swaps:
+        if old in name.lower():
+            return name.lower().replace(old, new, 1).title()
+    # fallback: swap two adjacent chars
+    i = random.randint(0, len(name) - 2)
+    return name[:i] + name[i + 1] + name[i] + name[i + 2:]
+
+
 def generate_social_accounts(brand: str, count: int = 6):
-    """Generate a list of fake social accounts mixing good and bad ones."""
-    brand_l = brand.strip()
-    if not brand_l:
-        brand_l = "brand"
+    brand_l = brand.strip() or "brand"
     handle = brand_l.lower().replace(" ", "")
 
     candidates = [
-        # Official (should NOT be flagged)
         {"name": brand_l, "handle": f"twitter:{handle}",
-         "logo_path": "", "is_official": True},
-        # Homoglyph
+         "logo_path": LOGO_FIXTURES[0], "is_official": True},
         {"name": _homoglyph_variant(brand_l), "handle": f"twitter:{handle}_1",
-         "logo_path": ""},
-        # Added word
+         "logo_path": LOGO_FIXTURES[1]},                       # homoglyph + identical logo
         {"name": _add_word_variant(brand_l), "handle": f"twitter:{handle}_off",
-         "logo_path": ""},
-        # Spacing
+         "logo_path": LOGO_FIXTURES[2]},                       # added-word + shaded logo
         {"name": _spacing_variant(brand_l), "handle": f"instagram:{handle}_sp",
-         "logo_path": ""},
-        # Typo
-        {"name": _typo_variant(brand_l), "handle": f"twitter:{handle}_typo",
-         "logo_path": ""},
-        # Unrelated (should NOT be flagged)
+         "logo_path": LOGO_FIXTURES[3]},                       # spacing + pro logo
+        {"name": _fuzzy_variant(brand_l), "handle": f"twitter:{handle}_typo",
+         "logo_path": LOGO_FIXTURES[4]},                       # fuzzy + dark logo
         {"name": "Random Tech News", "handle": "twitter:technews",
-         "logo_path": ""},
+         "logo_path": LOGO_FIXTURES[5]},                       # unrelated → safe
     ]
     return candidates[:count]
 
 
 def generate_apps(brand: str, count: int = 5):
-    brand_l = brand.strip()
-    if not brand_l:
-        brand_l = "brand"
+    brand_l = brand.strip() or "brand"
     handle = brand_l.lower().replace(" ", "")
 
     candidates = [
         {"name": brand_l, "package": f"com.{handle}.official",
-         "publisher": f"{brand_l} Inc", "logo_path": "", "is_official": True},
+         "publisher": f"{brand_l} Inc",
+         "logo_path": LOGO_FIXTURES[0], "is_official": True},
         {"name": _add_word_variant(brand_l), "package": f"com.fake.{handle}pro",
-         "publisher": "UnknownDev", "logo_path": ""},
+         "publisher": "UnknownDev", "logo_path": LOGO_FIXTURES[2]},
         {"name": _homoglyph_variant(brand_l) + " Wallet",
-         "package": f"com.x.{handle}1", "publisher": "xDev", "logo_path": ""},
+         "package": f"com.x.{handle}1", "publisher": "xDev",
+         "logo_path": LOGO_FIXTURES[1]},
         {"name": f"{brand_l} Cash Bonus", "package": f"com.scam.{handle}",
-         "publisher": "FastMoney", "logo_path": ""},
+         "publisher": "FastMoney", "logo_path": LOGO_FIXTURES[3]},
         {"name": "Notes App", "package": "com.notes.app",
-         "publisher": "NiceDev", "logo_path": ""},
+         "publisher": "NiceDev", "logo_path": LOGO_FIXTURES[5]},
     ]
     return candidates[:count]

@@ -1,8 +1,9 @@
 fastapi
 uvicorn[standard]
 rapidfuzz
-imagehash
 pillow
+imagehash
+numpy
 python-multipart
-groq
 python-dotenv
+groq
