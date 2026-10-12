@@ -4,70 +4,99 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DRP Platform — Social & App Monitoring</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>if(typeof Chart==='undefined'){document.write('<script src="https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js"><\/script>');}</script>
   <style>
     * { box-sizing: border-box; }
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: radial-gradient(ellipse at top, #1e293b 0%, #0f172a 60%);
+      background: #0a0e1a;
+      background-image:
+        radial-gradient(ellipse 800px 400px at 20% 0%, rgba(56,189,248,0.08), transparent),
+        radial-gradient(ellipse 800px 400px at 80% 0%, rgba(167,139,250,0.08), transparent);
+      background-attachment: fixed;
       color: #e2e8f0; margin: 0; padding: 2.5rem 2rem; min-height: 100vh;
     }
-    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #1e293b; }
-    .header-left h1 { font-size: 1.85rem; font-weight: 700; margin: 0; background: linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.02em; }
-    .header-left p { margin: .35rem 0 0 0; color: #64748b; font-size: .9rem; }
-    .brand-badge { display: inline-flex; align-items: center; gap: .5rem; background: #1e293b; border: 1px solid #334155; border-radius: 999px; padding: .5rem 1rem; font-size: .85rem; }
-    .brand-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: #0a0e1a; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
 
-    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-    .stat { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 1rem 1.25rem; transition: transform .15s ease, border-color .15s ease; }
-    .stat:hover { transform: translateY(-2px); border-color: #475569; }
-    .stat .label { font-size: .72rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .4rem; }
-    .stat .value { font-size: 1.75rem; font-weight: 700; color: #e2e8f0; }
-    .stat.threats .value { color: #f87171; }
-    .stat.safe .value { color: #4ade80; }
+    /* Header */
+    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 2.5rem; }
+    .header-left h1 { font-size: 2rem; font-weight: 800; margin: 0; background: linear-gradient(135deg, #38bdf8 0%, #a78bfa 50%, #f472b6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.03em; }
+    .header-left p { margin: .35rem 0 0 0; color: #64748b; font-size: .9rem; }
+    .brand-badge { display: inline-flex; align-items: center; gap: .6rem; background: rgba(30,41,59,.7); backdrop-filter: blur(10px); border: 1px solid #334155; border-radius: 999px; padding: .6rem 1.1rem; font-size: .85rem; font-weight: 500; }
+    .brand-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 12px #4ade80; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+    /* Summary stat cards */
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat { background: rgba(30,41,59,.6); backdrop-filter: blur(10px); border: 1px solid rgba(51,65,85,.8); border-radius: 14px; padding: 1.1rem 1.3rem; transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+    .stat:hover { transform: translateY(-3px); border-color: rgba(56,189,248,.5); box-shadow: 0 10px 30px -10px rgba(56,189,248,.3); }
+    .stat .label { font-size: .7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; font-weight: 600; }
+    .stat .value { font-size: 1.9rem; font-weight: 800; color: #e2e8f0; letter-spacing: -0.02em; }
+    .stat.threats .value { color: #f87171; text-shadow: 0 0 20px rgba(248,113,113,.4); }
+    .stat.safe .value { color: #4ade80; text-shadow: 0 0 20px rgba(74,222,128,.4); }
     .stat.accent .value { background: linear-gradient(135deg, #38bdf8, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 
-    .card { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem; }
-    .card h3 { margin: 0 0 1.25rem 0; font-size: 1rem; font-weight: 600; color: #e2e8f0; display: flex; align-items: center; gap: .5rem; }
+    /* Charts */
+    .charts { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; margin-bottom: 1.5rem; }
+    @media (max-width: 800px) { .charts { grid-template-columns: 1fr; } }
+    .chart-card { background: rgba(30,41,59,.6); backdrop-filter: blur(10px); border: 1px solid rgba(51,65,85,.8); border-radius: 14px; padding: 1.25rem; }
+    .chart-card h4 { margin: 0 0 1rem 0; font-size: .85rem; font-weight: 600; color: #cbd5e1; text-transform: uppercase; letter-spacing: .08em; }
+    .chart-wrap { position: relative; height: 200px; }
+
+    /* Cards */
+    .card { background: rgba(30,41,59,.6); backdrop-filter: blur(10px); border: 1px solid rgba(51,65,85,.8); border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem; transition: border-color .2s ease; }
+    .card:hover { border-color: rgba(51,65,85,1); }
+    .card h3 { margin: 0 0 1.25rem 0; font-size: 1rem; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; gap: .5rem; letter-spacing: -0.01em; }
     .card h3 .accent { color: #7dd3fc; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
 
-    label { display: block; font-size: .72rem; color: #94a3b8; margin-bottom: .4rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
-    input[type=text], textarea { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; padding: .6rem .75rem; font-family: inherit; font-size: .9rem; transition: border-color .15s ease; }
-    input[type=text]:focus, textarea:focus { outline: none; border-color: #38bdf8; }
+    label { display: block; font-size: .7rem; color: #94a3b8; margin-bottom: .4rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+    input[type=text], textarea { width: 100%; background: rgba(10,14,26,.7); border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; padding: .65rem .8rem; font-family: inherit; font-size: .9rem; transition: border-color .2s ease, box-shadow .2s ease; }
+    input[type=text]:focus, textarea:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,.15); }
     textarea { resize: vertical; min-height: 62px; }
     .hint { font-size: .72rem; color: #64748b; margin-top: .35rem; }
 
     .actions { margin-top: 1.25rem; display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
-    button { background: linear-gradient(135deg, #0ea5e9, #38bdf8); border: none; color: #082f49; padding: .65rem 1.3rem; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: .88rem; transition: transform .1s ease, box-shadow .15s ease; box-shadow: 0 4px 14px rgba(56,189,248,.25); }
-    button:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(56,189,248,.35); }
-    button.secondary { background: #334155; color: #e2e8f0; box-shadow: none; }
+    button { background: linear-gradient(135deg, #0ea5e9, #38bdf8); border: none; color: #082f49; padding: .7rem 1.4rem; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: .88rem; transition: transform .15s ease, box-shadow .2s ease; box-shadow: 0 4px 14px rgba(56,189,248,.25); }
+    button:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(56,189,248,.4); }
+    button:active { transform: translateY(0); }
+    button.secondary { background: rgba(51,65,85,.8); color: #e2e8f0; box-shadow: none; }
     button.secondary:hover { background: #475569; box-shadow: none; }
     button.purple { background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: #fff; box-shadow: 0 4px 14px rgba(139,92,246,.3); }
-    button.purple:hover { box-shadow: 0 6px 18px rgba(139,92,246,.45); }
+    button.purple:hover { box-shadow: 0 8px 22px rgba(139,92,246,.5); }
     button.cyan { background: linear-gradient(135deg,#06b6d4,#22d3ee); color:#0c4a6e; box-shadow: 0 4px 14px rgba(34,211,238,.3); }
+    button.cyan:hover { box-shadow: 0 8px 22px rgba(34,211,238,.5); }
     .toast { color: #4ade80; font-size: .85rem; }
 
-    h2.section { font-size: 1.15rem; font-weight: 600; margin: 2.5rem 0 1rem 0; color: #e2e8f0; display: flex; align-items: center; gap: .5rem; }
-    table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; margin-bottom: 1rem; }
-    th, td { padding: .75rem 1rem; text-align: left; font-size: .88rem; }
-    th { background: #0f172a; color: #94a3b8; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; border-bottom: 1px solid #334155; }
-    td { border-bottom: 1px solid #1e293b; }
+    h2.section { font-size: 1.1rem; font-weight: 700; margin: 2.5rem 0 1rem 0; color: #e2e8f0; display: flex; align-items: center; gap: .5rem; letter-spacing: -0.01em; }
+    table { width: 100%; border-collapse: collapse; background: rgba(30,41,59,.6); backdrop-filter: blur(10px); border-radius: 14px; overflow: hidden; border: 1px solid rgba(51,65,85,.8); margin-bottom: 1rem; }
+    th, td { padding: .8rem 1.1rem; text-align: left; font-size: .88rem; }
+    th { background: rgba(10,14,26,.5); color: #94a3b8; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; border-bottom: 1px solid #334155; }
+    td { border-bottom: 1px solid rgba(30,41,59,.5); }
     tbody tr:last-child td { border-bottom: none; }
-    tbody tr { transition: background .12s ease; }
-    tbody tr:hover { background: #0f172a; }
-    tbody tr.threat-row { border-left: 3px solid #ef4444; }
+    tbody tr { transition: background .15s ease, transform .15s ease; }
+    tbody tr:hover { background: rgba(15,23,42,.6); }
+    tbody tr.threat-row { border-left: 3px solid #ef4444; box-shadow: inset 3px 0 12px -6px rgba(239,68,68,.5); }
     tbody tr.safe-row { border-left: 3px solid #22c55e; }
 
-    .pill { display: inline-block; padding: .2rem .55rem; border-radius: 6px; font-size: .72rem; font-weight: 700; font-family: ui-monospace, monospace; }
-    .pill.high { background: rgba(239,68,68,.15); color: #fca5a5; }
-    .pill.mid  { background: rgba(245,158,11,.15); color: #fcd34d; }
-    .pill.low  { background: rgba(34,197,94,.15); color: #86efac; }
-    .badge { display: inline-block; padding: .2rem .6rem; border-radius: 6px; font-size: .75rem; font-weight: 600; }
-    .badge.threat { background: rgba(239,68,68,.15); color: #fca5a5; }
-    .badge.safe   { background: rgba(34,197,94,.15); color: #86efac; }
+    .pill { display: inline-block; padding: .25rem .6rem; border-radius: 6px; font-size: .75rem; font-weight: 700; font-family: ui-monospace, monospace; }
+    .pill.high { background: rgba(239,68,68,.18); color: #fca5a5; box-shadow: 0 0 12px rgba(239,68,68,.2); }
+    .pill.mid  { background: rgba(245,158,11,.18); color: #fcd34d; }
+    .pill.low  { background: rgba(34,197,94,.18); color: #86efac; }
+    .badge { display: inline-block; padding: .25rem .65rem; border-radius: 6px; font-size: .75rem; font-weight: 600; }
+    .badge.threat { background: rgba(239,68,68,.18); color: #fca5a5; }
+    .badge.safe   { background: rgba(34,197,94,.18); color: #86efac; }
 
-    .disclaimer { margin-top: 3rem; padding: 1.25rem 1.5rem; background: #1e293b; border: 1px solid #334155; border-left: 4px solid #f59e0b; border-radius: 10px; color: #cbd5e1; font-size: .88rem; line-height: 1.6; }
+    .disclaimer { margin-top: 3rem; padding: 1.25rem 1.5rem; background: rgba(30,41,59,.6); backdrop-filter: blur(10px); border: 1px solid #334155; border-left: 4px solid #f59e0b; border-radius: 12px; color: #cbd5e1; font-size: .88rem; line-height: 1.6; }
     .disclaimer .title { color: #fbbf24; font-weight: 700; margin-bottom: .5rem; }
+
+    /* AI summary fade-in */
+    .fade-in { animation: fade .5s ease; }
+    @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   </style>
 </head>
 <body>
@@ -88,6 +117,17 @@
     <div class="stat threats"><div class="label">Total Threats</div><div class="value" id="statThreats">—</div></div>
     <div class="stat safe"><div class="label">Safe Accounts</div><div class="value" id="statSafe">—</div></div>
     <div class="stat"><div class="label">Detection Signals</div><div class="value">6</div></div>
+  </div>
+
+  <div class="charts">
+    <div class="chart-card">
+      <h4>Threat Breakdown</h4>
+      <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h4>Detection Signals Triggered</h4>
+      <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+    </div>
   </div>
 
   <div class="card">
@@ -177,22 +217,105 @@
 <script>
 const $ = id => document.getElementById(id);
 
+// ---------- Chart setup ----------
+let donutChart = null;
+let barChart = null;
+
+function initCharts() {
+  const donutCtx = document.getElementById('donutChart').getContext('2d');
+  donutChart = new Chart(donutCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Threats', 'Safe'],
+      datasets: [{
+        data: [0, 0],
+        backgroundColor: ['#ef4444', '#22c55e'],
+        borderColor: '#0a0e1a',
+        borderWidth: 3,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { labels: { color: '#cbd5e1', font: { size: 12 } } }
+      }
+    }
+  });
+
+  const barCtx = document.getElementById('barChart').getContext('2d');
+  barChart = new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Homoglyph', 'Added-word', 'Logo', 'Fuzzy', 'Publisher'],
+      datasets: [{
+        label: 'Threats',
+        data: [0, 0, 0, 0, 0],
+        backgroundColor: [
+          'rgba(239,68,68,.7)',
+          'rgba(245,158,11,.7)',
+          'rgba(139,92,246,.7)',
+          'rgba(56,189,248,.7)',
+          'rgba(34,197,94,.7)'
+        ],
+        borderColor: ['#ef4444','#f59e0b','#8b5cf6','#38bdf8','#22c55e'],
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(51,65,85,.3)' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function updateCharts(allRows) {
+  if (!donutChart || !barChart) return;
+
+  const threats = allRows.filter(r => r.is_threat);
+  const safe = allRows.length - threats.length;
+
+  donutChart.data.datasets[0].data = [threats.length, safe];
+  donutChart.update();
+
+  // Count signal types from reason strings
+  let homoglyph = 0, addedWord = 0, logo = 0, fuzzy = 0, publisher = 0;
+  threats.forEach(t => {
+    const r = (t.reason || '').toLowerCase();
+    if (r.includes('homoglyph') || r.includes('look-alike')) homoglyph++;
+    if (r.includes('added word') || r.includes('partial match')) addedWord++;
+    if (r.includes('logo')) logo++;
+    if (r.includes('fuzzy')) fuzzy++;
+    if (r.includes('publisher')) publisher++;
+  });
+
+  barChart.data.datasets[0].data = [homoglyph, addedWord, logo, fuzzy, publisher];
+  barChart.update();
+}
+
+// ---------- Helpers ----------
 function linesToArray(text) {
   return text.split('\n').map(s => s.trim()).filter(Boolean);
 }
-
 function showToast(el, msg, ok = true) {
   el.style.color = ok ? '#4ade80' : '#f87171';
   el.textContent = msg;
   setTimeout(() => el.textContent = '', 3000);
 }
-
 function scorePill(score) {
   const cls = score >= 80 ? 'high' : score >= 50 ? 'mid' : 'low';
   return `<span class="pill ${cls}">${score}</span>`;
 }
 
-// ---------- Auto-fill helpers ----------
+// ---------- Auto-fill ----------
 let lastAutoFilledBrand = "";
 let userTouchedSocials = false;
 let userTouchedApps = false;
@@ -202,30 +325,24 @@ function suggestSocials(brand) {
   const h = brand.toLowerCase().replace(/\s+/g, "");
   return [`twitter:${h}`, `instagram:${h}`, `facebook:${h}`].join("\n");
 }
-
 function suggestApps(brand) {
   const h = brand.toLowerCase().replace(/\s+/g, "");
   return `com.${h}.official`;
 }
-
 function suggestIdentifiers(brand) {
   const h = brand.toLowerCase().replace(/\s+/g, "");
   return `${h}.com`;
 }
-
 function maybeAutoFill() {
   const newBrand = $('inpBrand').value.trim();
   if (!newBrand || newBrand === lastAutoFilledBrand) return;
-
-  // Always fill unless the user manually edited the field
   if (!userTouchedSocials) $('inpSocials').value = suggestSocials(newBrand);
   if (!userTouchedApps)    $('inpApps').value    = suggestApps(newBrand);
   if (!userTouchedIds)     $('inpIds').value     = suggestIdentifiers(newBrand);
-
   lastAutoFilledBrand = newBrand;
 }
 
-// ---------- Load / save brand ----------
+// ---------- Load / save ----------
 async function loadBrand() {
   const b = await (await fetch('/api/brand')).json();
   $('brandName').textContent = b.brand_name;
@@ -235,9 +352,7 @@ async function loadBrand() {
   $('inpApps').value    = (b.official_apps    || []).join('\n');
   $('inpIds').value     = (b.identifiers      || []).join('\n');
   lastAutoFilledBrand = b.brand_name || '';
-  userTouchedSocials = false;
-  userTouchedApps = false;
-  userTouchedIds = false;
+  userTouchedSocials = userTouchedApps = userTouchedIds = false;
 }
 
 async function saveBrand() {
@@ -265,6 +380,7 @@ async function saveBrand() {
 // ---------- Scans ----------
 async function loadSocial() {
   const rows = await (await fetch('/api/scan/social')).json();
+  window.__socialRows = rows;
   document.querySelector('#socialTable tbody').innerHTML = rows.map(r => `
     <tr class="${r.is_threat ? 'threat-row' : 'safe-row'}">
       <td>${r.name}</td>
@@ -273,11 +389,12 @@ async function loadSocial() {
       <td><span class="badge ${r.is_threat ? 'threat' : 'safe'}">${r.is_threat ? '⚠️ THREAT' : '✅ Safe'}</span></td>
       <td>${r.reason}</td>
     </tr>`).join('');
-  updateStats();
+  updateStatsAndCharts();
 }
 
 async function loadApps() {
   const rows = await (await fetch('/api/scan/apps')).json();
+  window.__appRows = rows;
   document.querySelector('#appsTable tbody').innerHTML = rows.map(r => `
     <tr class="${r.is_threat ? 'threat-row' : 'safe-row'}">
       <td>${r.name}</td>
@@ -287,18 +404,20 @@ async function loadApps() {
       <td><span class="badge ${r.is_threat ? 'threat' : 'safe'}">${r.is_threat ? '⚠️ THREAT' : '✅ Safe'}</span></td>
       <td>${r.reason}</td>
     </tr>`).join('');
-  updateStats();
+  updateStatsAndCharts();
 }
 
-function updateStats() {
-  const rows = [
-    ...document.querySelectorAll('#socialTable tbody tr'),
-    ...document.querySelectorAll('#appsTable tbody tr'),
-  ];
-  const threats = rows.filter(r => r.classList.contains('threat-row')).length;
-  const safe = rows.length - threats;
+function updateStatsAndCharts() {
+  const social = window.__socialRows || [];
+  const apps = window.__appRows || [];
+  const all = [...social, ...apps];
+
+  const threats = all.filter(r => r.is_threat).length;
+  const safe = all.length - threats;
   $('statThreats').textContent = threats;
   $('statSafe').textContent = safe;
+
+  updateCharts(all);
 }
 
 // ---------- Manual scan ----------
@@ -324,7 +443,7 @@ async function scanCandidate() {
   const badge = isThreat ? '⚠️ THREAT' : '✅ Safe';
 
   result.innerHTML = `
-    <div style="background:#0f172a; border:1px solid #334155; border-left:4px solid ${color}; border-radius:10px; padding:1rem;">
+    <div class="fade-in" style="background:rgba(10,14,26,.7); border:1px solid #334155; border-left:4px solid ${color}; border-radius:10px; padding:1rem;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.6rem;">
         <div>
           <b>${data.candidate.name}</b>
@@ -345,7 +464,7 @@ async function scanCandidate() {
   toast.textContent = '';
 }
 
-// ---------- AI Summary ----------
+// ---------- AI summary ----------
 async function generateAISummary() {
   const toast = $('aiToast');
   const box = $('aiSummaryBox');
@@ -381,7 +500,7 @@ async function generateAISummary() {
     }
 
     box.innerHTML = `
-      <div style="background:#0f172a; border:1px solid #334155; border-left:4px solid #22d3ee; border-radius:10px; padding:1rem; line-height:1.6; color:#e2e8f0;">
+      <div class="fade-in" style="background:rgba(10,14,26,.7); border:1px solid #334155; border-left:4px solid #22d3ee; border-radius:10px; padding:1rem; line-height:1.6; color:#e2e8f0;">
         ${data.summary}
         <div style="margin-top:.75rem; color:#64748b; font-size:.75rem;">
           Generated by <b>GPT-OSS 120B</b> via Groq · ${threats.length} threat${threats.length === 1 ? '' : 's'} analyzed
@@ -405,17 +524,15 @@ $('btnReset').addEventListener('click', async () => {
   showToast($('toast'), '↻ Reloaded');
 });
 
-// Auto-fill on brand name change
 $('inpBrand').addEventListener('blur', maybeAutoFill);
 $('inpBrand').addEventListener('change', maybeAutoFill);
-
-// Track manual edits so we don't overwrite them
 $('inpSocials').addEventListener('input', () => { userTouchedSocials = true; });
 $('inpApps').addEventListener('input',    () => { userTouchedApps = true; });
 $('inpIds').addEventListener('input',     () => { userTouchedIds = true; });
 
 // ---------- Init ----------
 (async function init() {
+  initCharts();
   await loadBrand();
   await Promise.all([loadSocial(), loadApps()]);
 })();
