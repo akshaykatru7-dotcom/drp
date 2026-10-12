@@ -1,4 +1,4 @@
-# DPR-platform
+# DRP Platform — Digital Risk Protection
 Digital Risk Protection Platform — Social &amp; App Monitoring. Detects fake social media profiles and impersonating mobile apps using multi-signal detection (fuzzy names, homoglyphs, logo pHash, publisher mismatch).  Built for HacXLerate 2026 Round 1 · Team BYTEBLAZE
 
 ---
