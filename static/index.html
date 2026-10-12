@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DRP Platform — Social & App Monitoring</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(ellipse at top, #1e293b 0%, #0f172a 60%);
+      color: #e2e8f0; margin: 0; padding: 2.5rem 2rem; min-height: 100vh;
+    }
+    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #1e293b; }
+    .header-left h1 { font-size: 1.85rem; font-weight: 700; margin: 0; background: linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.02em; }
+    .header-left p { margin: .35rem 0 0 0; color: #64748b; font-size: .9rem; }
+    .brand-badge { display: inline-flex; align-items: center; gap: .5rem; background: #1e293b; border: 1px solid #334155; border-radius: 999px; padding: .5rem 1rem; font-size: .85rem; }
+    .brand-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 1rem 1.25rem; transition: transform .15s ease, border-color .15s ease; }
+    .stat:hover { transform: translateY(-2px); border-color: #475569; }
+    .stat .label { font-size: .72rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .4rem; }
+    .stat .value { font-size: 1.75rem; font-weight: 700; color: #e2e8f0; }
+    .stat.threats .value { color: #f87171; }
+    .stat.safe .value { color: #4ade80; }
+    .stat.accent .value { background: linear-gradient(135deg, #38bdf8, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .card h3 { margin: 0 0 1.25rem 0; font-size: 1rem; font-weight: 600; color: #e2e8f0; display: flex; align-items: center; gap: .5rem; }
+    .card h3 .accent { color: #7dd3fc; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+
+    label { display: block; font-size: .72rem; color: #94a3b8; margin-bottom: .4rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+    input[type=text], textarea { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; padding: .6rem .75rem; font-family: inherit; font-size: .9rem; transition: border-color .15s ease; }
+    input[type=text]:focus, textarea:focus { outline: none; border-color: #38bdf8; }
+    textarea { resize: vertical; min-height: 62px; }
+    .hint { font-size: .72rem; color: #64748b; margin-top: .35rem; }
+
+    .actions { margin-top: 1.25rem; display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+    button { background: linear-gradient(135deg, #0ea5e9, #38bdf8); border: none; color: #082f49; padding: .65rem 1.3rem; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: .88rem; transition: transform .1s ease, box-shadow .15s ease; box-shadow: 0 4px 14px rgba(56,189,248,.25); }
+    button:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(56,189,248,.35); }
+    button.secondary { background: #334155; color: #e2e8f0; box-shadow: none; }
+    button.secondary:hover { background: #475569; box-shadow: none; }
+    button.purple { background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: #fff; box-shadow: 0 4px 14px rgba(139,92,246,.3); }
+    button.purple:hover { box-shadow: 0 6px 18px rgba(139,92,246,.45); }
+    button.cyan { background: linear-gradient(135deg,#06b6d4,#22d3ee); color:#0c4a6e; box-shadow: 0 4px 14px rgba(34,211,238,.3); }
+    .toast { color: #4ade80; font-size: .85rem; }
+
+    h2.section { font-size: 1.15rem; font-weight: 600; margin: 2.5rem 0 1rem 0; color: #e2e8f0; display: flex; align-items: center; gap: .5rem; }
+    table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; margin-bottom: 1rem; }
+    th, td { padding: .75rem 1rem; text-align: left; font-size: .88rem; }
+    th { background: #0f172a; color: #94a3b8; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; border-bottom: 1px solid #334155; }
+    td { border-bottom: 1px solid #1e293b; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background .12s ease; }
+    tbody tr:hover { background: #0f172a; }
+    tbody tr.threat-row { border-left: 3px solid #ef4444; }
+    tbody tr.safe-row { border-left: 3px solid #22c55e; }
+
+    .pill { display: inline-block; padding: .2rem .55rem; border-radius: 6px; font-size: .72rem; font-weight: 700; font-family: ui-monospace, monospace; }
+    .pill.high { background: rgba(239,68,68,.15); color: #fca5a5; }
+    .pill.mid  { background: rgba(245,158,11,.15); color: #fcd34d; }
+    .pill.low  { background: rgba(34,197,94,.15); color: #86efac; }
+    .badge { display: inline-block; padding: .2rem .6rem; border-radius: 6px; font-size: .75rem; font-weight: 600; }
+    .badge.threat { background: rgba(239,68,68,.15); color: #fca5a5; }
+    .badge.safe   { background: rgba(34,197,94,.15); color: #86efac; }
+
+    .disclaimer { margin-top: 3rem; padding: 1.25rem 1.5rem; background: #1e293b; border: 1px solid #334155; border-left: 4px solid #f59e0b; border-radius: 10px; color: #cbd5e1; font-size: .88rem; line-height: 1.6; }
+    .disclaimer .title { color: #fbbf24; font-weight: 700; margin-bottom: .5rem; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-left">
+      <h1>🛡️ Digital Risk Protection</h1>
+      <p>AI-Powered Social &amp; App Monitoring · Team BYTEBLAZE</p>
+    </div>
+    <div class="brand-badge">
+      <span class="dot"></span>
+      Monitoring: <b id="brandName">…</b>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="stat accent"><div class="label">Active Brand</div><div class="value" id="statBrand">—</div></div>
+    <div class="stat threats"><div class="label">Total Threats</div><div class="value" id="statThreats">—</div></div>
+    <div class="stat safe"><div class="label">Safe Accounts</div><div class="value" id="statSafe">—</div></div>
+    <div class="stat"><div class="label">Detection Signals</div><div class="value">6</div></div>
+  </div>
+
+  <div class="card">
+    <h3>🎯 <span class="accent">Brand Profile</span> — Source of Truth</h3>
+    <div class="grid">
+      <div>
+        <label for="inpBrand">Brand name</label>
+        <input type="text" id="inpBrand" placeholder="e.g. PayPal" />
+      </div>
+      <div>
+        <label for="inpSocials">Official social handles</label>
+        <textarea id="inpSocials" placeholder="one per line&#10;twitter:paypal"></textarea>
+        <div class="hint">Format: platform:handle — one per line</div>
+      </div>
+      <div>
+        <label for="inpApps">Official app package IDs</label>
+        <textarea id="inpApps" placeholder="com.paypal.android.p2pmobile"></textarea>
+      </div>
+      <div>
+        <label for="inpIds">Other identifiers</label>
+        <textarea id="inpIds" placeholder="paypal.com"></textarea>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="btnSave">💾 Save &amp; Re-scan</button>
+      <button id="btnReset" class="secondary">↻ Reload</button>
+      <span id="toast" class="toast"></span>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid #8b5cf6;">
+    <h3>🔍 <span class="accent" style="color:#c4b5fd;">Manual Scan</span> — Test Any Candidate</h3>
+    <div class="grid">
+      <div>
+        <label for="candName">Candidate name</label>
+        <input type="text" id="candName" placeholder="e.g. Paypa1 / PayPal Help" />
+      </div>
+      <div>
+        <label for="candHandle">Handle / package (optional)</label>
+        <input type="text" id="candHandle" placeholder="twitter:paypal_help" />
+      </div>
+      <div>
+        <label for="candLogo">Logo path (optional)</label>
+        <input type="text" id="candLogo" placeholder="logos/fake_paypal_pro.png" />
+      </div>
+    </div>
+    <div class="actions">
+      <button id="btnScan" class="purple">🔍 Scan Candidate</button>
+      <span id="scanToast" class="toast"></span>
+    </div>
+    <div id="scanResult" style="margin-top:1rem;"></div>
+  </div>
+
+  <div class="card" style="border-left:4px solid #22d3ee;">
+    <h3>🧠 <span class="accent" style="color:#67e8f9;">AI Threat Summary</span> — Powered by Groq</h3>
+    <p style="color:#94a3b8; font-size:.9rem; margin:0 0 1rem 0;">
+      Uses an LLM to summarize detected threats and recommend next actions for analysts.
+    </p>
+    <div class="actions">
+      <button id="btnAISummary" class="cyan">🧠 Generate AI Summary</button>
+      <span id="aiToast" class="toast"></span>
+    </div>
+    <div id="aiSummaryBox" style="margin-top:1rem;"></div>
+  </div>
+
+  <h2 class="section">📱 Social Media Monitoring</h2>
+  <table id="socialTable">
+    <thead><tr><th>Name</th><th>Handle</th><th>Score</th><th>Status</th><th>Reason</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h2 class="section">🏪 App Store Monitoring</h2>
+  <table id="appsTable">
+    <thead><tr><th>App</th><th>Package</th><th>Publisher</th><th>Score</th><th>Status</th><th>Reason</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="disclaimer">
+    <div class="title">⚠️ Demo Data Disclaimer</div>
+    <div>
+      Data sources (social accounts, app listings, logos) are <b>simulated</b> for this demo — we don't have enterprise API access to Twitter or the Play Store.
+      The <b>detection engine, brand profile logic, scoring, homoglyph mapping, logo pHash comparison, and AI summary layer are fully real</b>.
+      To go live, replace the seed generator with real API clients — no changes needed downstream.
+    </div>
+  </div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function linesToArray(text) {
+  return text.split('\n').map(s => s.trim()).filter(Boolean);
+}
+
+function showToast(el, msg, ok = true) {
+  el.style.color = ok ? '#4ade80' : '#f87171';
+  el.textContent = msg;
+  setTimeout(() => el.textContent = '', 3000);
+}
+
+function scorePill(score) {
+  const cls = score >= 80 ? 'high' : score >= 50 ? 'mid' : 'low';
+  return `<span class="pill ${cls}">${score}</span>`;
+}
+
+// ---------- Auto-fill helpers ----------
+let lastAutoFilledBrand = "";
+let userTouchedSocials = false;
+let userTouchedApps = false;
+let userTouchedIds = false;
+
+function suggestSocials(brand) {
+  const h = brand.toLowerCase().replace(/\s+/g, "");
+  return [`twitter:${h}`, `instagram:${h}`, `facebook:${h}`].join("\n");
+}
+
+function suggestApps(brand) {
+  const h = brand.toLowerCase().replace(/\s+/g, "");
+  return `com.${h}.official`;
+}
+
+function suggestIdentifiers(brand) {
+  const h = brand.toLowerCase().replace(/\s+/g, "");
+  return `${h}.com`;
+}
+
+function maybeAutoFill() {
+  const newBrand = $('inpBrand').value.trim();
+  if (!newBrand || newBrand === lastAutoFilledBrand) return;
+
+  // Always fill unless the user manually edited the field
+  if (!userTouchedSocials) $('inpSocials').value = suggestSocials(newBrand);
+  if (!userTouchedApps)    $('inpApps').value    = suggestApps(newBrand);
+  if (!userTouchedIds)     $('inpIds').value     = suggestIdentifiers(newBrand);
+
+  lastAutoFilledBrand = newBrand;
+}
+
+// ---------- Load / save brand ----------
+async function loadBrand() {
+  const b = await (await fetch('/api/brand')).json();
+  $('brandName').textContent = b.brand_name;
+  $('statBrand').textContent = b.brand_name;
+  $('inpBrand').value = b.brand_name || '';
+  $('inpSocials').value = (b.official_socials || []).join('\n');
+  $('inpApps').value    = (b.official_apps    || []).join('\n');
+  $('inpIds').value     = (b.identifiers      || []).join('\n');
+  lastAutoFilledBrand = b.brand_name || '';
+  userTouchedSocials = false;
+  userTouchedApps = false;
+  userTouchedIds = false;
+}
+
+async function saveBrand() {
+  const payload = {
+    brand_name: $('inpBrand').value.trim(),
+    official_socials: linesToArray($('inpSocials').value),
+    official_apps:    linesToArray($('inpApps').value),
+    identifiers:      linesToArray($('inpIds').value),
+  };
+  if (!payload.brand_name) { showToast($('toast'), 'Brand name is required', false); return; }
+  const res = await fetch('/api/brand', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) { showToast($('toast'), 'Save failed', false); return; }
+  const data = await res.json();
+  $('brandName').textContent = data.profile.brand_name;
+  $('statBrand').textContent = data.profile.brand_name;
+  lastAutoFilledBrand = data.profile.brand_name;
+  showToast($('toast'), '✅ Saved — rescanning…');
+  await Promise.all([loadSocial(), loadApps()]);
+}
+
+// ---------- Scans ----------
+async function loadSocial() {
+  const rows = await (await fetch('/api/scan/social')).json();
+  document.querySelector('#socialTable tbody').innerHTML = rows.map(r => `
+    <tr class="${r.is_threat ? 'threat-row' : 'safe-row'}">
+      <td>${r.name}</td>
+      <td>${r.handle}</td>
+      <td>${scorePill(r.score)}</td>
+      <td><span class="badge ${r.is_threat ? 'threat' : 'safe'}">${r.is_threat ? '⚠️ THREAT' : '✅ Safe'}</span></td>
+      <td>${r.reason}</td>
+    </tr>`).join('');
+  updateStats();
+}
+
+async function loadApps() {
+  const rows = await (await fetch('/api/scan/apps')).json();
+  document.querySelector('#appsTable tbody').innerHTML = rows.map(r => `
+    <tr class="${r.is_threat ? 'threat-row' : 'safe-row'}">
+      <td>${r.name}</td>
+      <td>${r.package}</td>
+      <td>${r.publisher}</td>
+      <td>${scorePill(r.score)}</td>
+      <td><span class="badge ${r.is_threat ? 'threat' : 'safe'}">${r.is_threat ? '⚠️ THREAT' : '✅ Safe'}</span></td>
+      <td>${r.reason}</td>
+    </tr>`).join('');
+  updateStats();
+}
+
+function updateStats() {
+  const rows = [
+    ...document.querySelectorAll('#socialTable tbody tr'),
+    ...document.querySelectorAll('#appsTable tbody tr'),
+  ];
+  const threats = rows.filter(r => r.classList.contains('threat-row')).length;
+  const safe = rows.length - threats;
+  $('statThreats').textContent = threats;
+  $('statSafe').textContent = safe;
+}
+
+// ---------- Manual scan ----------
+async function scanCandidate() {
+  const name = $('candName').value.trim();
+  const handle = $('candHandle').value.trim();
+  const logo = $('candLogo').value.trim();
+  const toast = $('scanToast');
+  const result = $('scanResult');
+
+  if (!name) { showToast(toast, 'Enter a name', false); return; }
+  showToast(toast, 'Scanning…');
+
+  const res = await fetch('/api/scan/custom', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, handle, logo_path: logo }),
+  });
+  const data = await res.json();
+  const v = data.verdict;
+  const isThreat = v.is_threat;
+  const color = isThreat ? '#f87171' : '#4ade80';
+  const badge = isThreat ? '⚠️ THREAT' : '✅ Safe';
+
+  result.innerHTML = `
+    <div style="background:#0f172a; border:1px solid #334155; border-left:4px solid ${color}; border-radius:10px; padding:1rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.6rem;">
+        <div>
+          <b>${data.candidate.name}</b>
+          ${data.candidate.handle ? `<span style="color:#94a3b8;"> · ${data.candidate.handle}</span>` : ''}
+        </div>
+        <span class="badge ${isThreat ? 'threat' : 'safe'}">${badge}</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; font-size:.85rem;">
+        <div><span style="color:#94a3b8;">Name:</span> <b>${v.name_score}</b></div>
+        <div><span style="color:#94a3b8;">Logo:</span> <b>${v.logo_score}</b></div>
+        <div><span style="color:#94a3b8;">Combined:</span> <b style="color:${color};">${v.score}</b></div>
+      </div>
+      <div style="margin-top:.6rem; color:#94a3b8; font-size:.85rem;">
+        <b>Reason:</b> ${v.reason}
+      </div>
+    </div>
+  `;
+  toast.textContent = '';
+}
+
+// ---------- AI Summary ----------
+async function generateAISummary() {
+  const toast = $('aiToast');
+  const box = $('aiSummaryBox');
+
+  showToast(toast, '🧠 Analyzing threats…');
+  box.innerHTML = '<div style="color:#94a3b8;">Thinking…</div>';
+
+  const socialRows = await (await fetch('/api/scan/social')).json();
+  const appRows    = await (await fetch('/api/scan/apps')).json();
+  const threats = [...socialRows, ...appRows]
+    .filter(r => r.is_threat)
+    .map(r => ({
+      name: r.name,
+      handle: r.handle || r.package || '',
+      score: r.score,
+      reason: r.reason,
+    }));
+
+  const brand = $('brandName').textContent;
+
+  try {
+    const res = await fetch('/api/ai-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ threats, brand }),
+    });
+    const data = await res.json();
+
+    if (!data.ok) {
+      box.innerHTML = `<div style="color:#f87171;">⚠️ ${data.error || 'AI summary failed'}</div>`;
+      toast.textContent = '';
+      return;
+    }
+
+    box.innerHTML = `
+      <div style="background:#0f172a; border:1px solid #334155; border-left:4px solid #22d3ee; border-radius:10px; padding:1rem; line-height:1.6; color:#e2e8f0;">
+        ${data.summary}
+        <div style="margin-top:.75rem; color:#64748b; font-size:.75rem;">
+          Generated by <b>GPT-OSS 120B</b> via Groq · ${threats.length} threat${threats.length === 1 ? '' : 's'} analyzed
+        </div>
+      </div>
+    `;
+    showToast(toast, '✅ Summary ready');
+  } catch (e) {
+    box.innerHTML = `<div style="color:#f87171;">⚠️ Network error: ${e.message}</div>`;
+    toast.textContent = '';
+  }
+}
+
+// ---------- Wire up ----------
+$('btnSave').addEventListener('click', saveBrand);
+$('btnScan').addEventListener('click', scanCandidate);
+$('btnAISummary').addEventListener('click', generateAISummary);
+$('btnReset').addEventListener('click', async () => {
+  await loadBrand();
+  await Promise.all([loadSocial(), loadApps()]);
+  showToast($('toast'), '↻ Reloaded');
+});
+
+// Auto-fill on brand name change
+$('inpBrand').addEventListener('blur', maybeAutoFill);
+$('inpBrand').addEventListener('change', maybeAutoFill);
+
+// Track manual edits so we don't overwrite them
+$('inpSocials').addEventListener('input', () => { userTouchedSocials = true; });
+$('inpApps').addEventListener('input',    () => { userTouchedApps = true; });
+$('inpIds').addEventListener('input',     () => { userTouchedIds = true; });
+
+// ---------- Init ----------
+(async function init() {
+  await loadBrand();
+  await Promise.all([loadSocial(), loadApps()]);
+})();
+</script>
+</body>
+</html>
